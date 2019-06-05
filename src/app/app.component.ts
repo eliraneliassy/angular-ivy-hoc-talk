@@ -1,6 +1,10 @@
-import { Component, ɵrenderComponent, Injector, ɵComponentType } from '@angular/core';
+import { Component, ɵrenderComponent, Injector, ɵɵdirectiveInject, INJECTOR } from '@angular/core';
 
-@HOC
+@LazyComponent({
+  path: './feature/feature/feature.component',
+  component: 'FeatureComponent',
+  host: 'my-container'
+})
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -14,14 +18,30 @@ export class AppComponent {
       ɵrenderComponent(FeatureComponent, { host: 'my-container', injector: this.injector });
     });
   }
+
+  afterViewLoad() {
+    console.log('Lazy HOC loaded!');
+  }
 }
 
-export function HOC(cmpType) {
-  const originalFactory = cmpType.ngComponentDef.factory;
-  cmpType.ngComponentDef.factory = (...args) => {
-    const cmp = originalFactory(...args);
-    console.log(cmp);
-    return cmp;
+export function LazyComponent(config: { path: string, component: string, host?: string }) {
+  return (cmpType) => {
+    const originalFactory = cmpType.ngComponentDef.factory;
+    cmpType.ngComponentDef.factory = (...args) => {
+      const cmp = originalFactory(...args);
+      console.log(cmp);
+
+      const injector = ɵɵdirectiveInject(INJECTOR);
+
+      import(`${config.path}`).then(m => {
+        ɵrenderComponent(m[config.component], { host: config.host, injector });
+
+        if (cmp.afterViewLoad) {
+          cmp.afterViewLoad();
+        }
+      });
+      return cmp;
+    };
+    return cmpType;
   };
-  return cmpType;
 }
