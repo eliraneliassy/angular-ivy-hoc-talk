@@ -1,5 +1,6 @@
-import { Component, ɵrenderComponent, Injector } from '@angular/core';
+import { Component, ɵrenderComponent, Injector, ɵComponentType } from '@angular/core';
 
+@HOC
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -10,7 +11,17 @@ export class AppComponent {
   constructor(private injector: Injector) { }
   loadFeature() {
     import('./feature/feature/feature.component').then(({ FeatureComponent }) => {
-      ɵrenderComponent(FeatureComponent, { host: 'my-container', injector: this.injector});
+      ɵrenderComponent(FeatureComponent, { host: 'my-container', injector: this.injector });
     });
   }
+}
+
+export function HOC(cmpType) {
+  const originalFactory = cmpType.ngComponentDef.factory;
+  cmpType.ngComponentDef.factory = (...args) => {
+    const cmp = originalFactory(...args);
+    console.log(cmp);
+    return cmp;
+  };
+  return cmpType;
 }
